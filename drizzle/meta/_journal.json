@@ -15,6 +15,13 @@
       "when": 1790759870603,
       "tag": "0001_known_the_twelve",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790762530899,
+      "tag": "0002_loud_maestro",
+      "breakpoints": true
     }
   ]
 }

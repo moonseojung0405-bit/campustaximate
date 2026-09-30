@@ -6,6 +6,13 @@ const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Micr
 try{
  const context=await browser.newContext({viewport:{width:1365,height:1000}});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await Promise.all([page.waitForResponse(r=>r.url().includes('/api/rides?')),page.goto('http://127.0.0.1:5173/')]);
+ await page.getByRole('button',{name:'로그인 / 가입',exact:true}).click();
+ await page.getByRole('tab',{name:'처음 가입하기',exact:true}).click();
+ await page.getByLabel('아이디',{exact:true}).fill('ui_'+Date.now().toString(36));
+ await page.getByLabel('숫자 4자리 비밀번호',{exact:true}).fill('0842');
+ await page.getByLabel('비밀번호 확인',{exact:true}).fill('0842');
+ await page.getByRole('button',{name:'가입하고 시작하기',exact:true}).click();
+ await page.getByRole('button',{name:'로그아웃',exact:true}).waitFor();
  await page.getByRole('button',{name:'모집 만들기',exact:true}).click();
  await page.getByLabel('모임에서 쓸 닉네임').fill('화과대학우');
  await page.getByLabel('만날 장소').fill('역 앞 택시 승강장 · 테스트');
@@ -24,7 +31,7 @@ try{
  await page.setViewportSize({width:390,height:844});await page.screenshot({animations:'disabled',path:'.sites-runtime/home-mobile.png',fullPage:true});
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false,'No mobile overflow');
  await page.getByRole('button',{name:'모임 채팅'}).first().click();await page.getByRole('log').getByText('10분 안에 도착할게요.').waitFor();
- await page.screenshot({animations:'disabled',path:'.sites-runtime/chat-mobile.png'}); console.log(await page.locator('[role=dialog]').evaluate(el=>({background:getComputedStyle(el).backgroundColor,opacity:getComputedStyle(el).opacity}))); console.log(await page.locator('.guest-badge').evaluate(el=>({display:getComputedStyle(el).display,whiteSpace:getComputedStyle(el).whiteSpace}))); 
+ await page.screenshot({animations:'disabled',path:'.sites-runtime/chat-mobile.png'}); console.log(await page.locator('[role=dialog]').evaluate(el=>({background:getComputedStyle(el).backgroundColor,opacity:getComputedStyle(el).opacity})));  
  await page.getByRole('button',{name:'모집 취소',exact:true}).click();await page.getByRole('button',{name:'취소하기',exact:true}).click();
  await page.getByRole('heading',{name:'우리 모임 채팅'}).waitFor({state:'hidden'});
  assert.deepEqual(errors,[],'No browser runtime errors');

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 const base='http://127.0.0.1:5173';
 const jars=new Map();
-async function cookie(user){if(!user)return '';if(!jars.has(user)){const r=await fetch(base+'/api/session');assert.equal(r.status,200);jars.set(user,r.headers.get('set-cookie').split(';')[0]);}return jars.get(user);}
+async function cookie(user){if(!user)return '';if(!jars.has(user)){const username='ride_'+(await import('node:crypto')).createHash('sha256').update(user).digest('hex').slice(0,15);const r=await fetch(base+'/api/session',{method:'POST',headers:{Origin:base,'Content-Type':'application/json'},body:JSON.stringify({action:'register',username,pin:'0842',confirmPin:'0842'})});assert.equal(r.status,201);jars.set(user,r.headers.getSetCookie().find(c=>c.startsWith('campus_taxi_account=')).split(';')[0]);}return jars.get(user);}
 async function request(user,body,path='/api/rides',origin=base){const r=await fetch(base+path,{method:body?'POST':'GET',headers:{Cookie:await cookie(user),...(body?{'Content-Type':'application/json','Origin':origin}:{})},body:body?JSON.stringify(body):undefined});const text=await r.text();let data;try{data=JSON.parse(text);}catch{data={error:text};}return {status:r.status,data};}
 const host='verify-'+Date.now(),future=Date.now()+3600000;
 const draft={action:'create',station:'어천역',departure:future,place:'테스트 모임 · 실제 모집 아님',capacity:4,fare:20000,note:'로컬 검증용',nickname:'테스트모집자'};
