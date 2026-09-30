@@ -1,0 +1,7 @@
+import { sqliteTable, text, integer, primaryKey, index } from 'drizzle-orm/sqlite-core';
+export const rides = sqliteTable('rides', {
+ id:text('id').primaryKey(), host:text('host').notNull(), station:text('station').notNull(), departure:integer('departure').notNull(), place:text('place').notNull(), capacity:integer('capacity').notNull(), fare:integer('fare'), note:text('note').notNull().default(''), status:text('status').notNull().default('open'), created:integer('created').notNull()
+},t=>[index('idx_rides_station_departure').on(t.station,t.departure),index('idx_rides_host_created').on(t.host,t.created)]);
+export const members = sqliteTable('members',{ rideId:text('ride_id').notNull().references(()=>rides.id,{onDelete:'cascade'}), userId:text('user_id').notNull(), nickname:text('nickname').notNull(),joined:integer('joined').notNull() },t=>[primaryKey({columns:[t.rideId,t.userId]}),index('idx_members_user').on(t.userId)]);
+export const messages = sqliteTable('messages',{id:text('id').primaryKey(),rideId:text('ride_id').notNull().references(()=>rides.id,{onDelete:'cascade'}),userId:text('user_id').notNull(),nickname:text('nickname').notNull(),body:text('body').notNull(),created:integer('created').notNull()},t=>[index('idx_messages_ride_created').on(t.rideId,t.created)]);
+export const visitors=sqliteTable('visitors',{id:text('id').primaryKey(),expires:integer('expires').notNull()});
