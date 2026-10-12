@@ -1,4 +1,5 @@
 import { getRawDb } from '../../../db';
+import { isSameOrigin } from '../../request-origin';
 import { COOKIE,ACCOUNT_COOKIE,accountSession,legacyVisitorId,hashToken,randomToken,sessionCookie,readToken,derivePin,equalHash,reserveAttempt } from '../../visitor';
 export const dynamic='force-dynamic';
 const reply=(body:unknown,status=200,extra:Record<string,string>={})=>Response.json(body,{status,headers:{'Cache-Control':'no-store',...extra}});
@@ -13,7 +14,7 @@ export async function GET(request:Request){
 }
 export async function POST(request:Request){
  try{
-  if(request.headers.get('origin')!==new URL(request.url).origin)return reply({error:'요청 출처를 확인할 수 없어요.'},403);
+  if(!isSameOrigin(request))return reply({error:'요청 출처를 확인할 수 없어요.'},403);
   const text=await request.text();if(text.length>1024)return reply({error:'입력 내용을 확인해 주세요.'},400);
   let data;try{data=JSON.parse(text);}catch{return reply({error:'입력 내용을 확인해 주세요.'},400);}
   if(!data||typeof data!=='object')return reply({error:'입력 내용을 확인해 주세요.'},400);
@@ -26,14 +27,14 @@ export async function POST(request:Request){
   const username=typeof data.username==='string'?data.username.trim().toLowerCase():'';
   if(!/^[a-z0-9_]{4,20}$/.test(username)||typeof data.pin!=='string'||!/^\d{4}$/.test(data.pin))return reply({error:'아이디는 영문·숫자·밑줄 4~20자, 비밀번호는 숫자 4자리로 입력해 주세요.'},400);
   if(await accountSession(request))return reply({error:'이미 로그인되어 있어요. 다른 계정을 쓰려면 먼저 로그아웃해 주세요.'},409);
-  const ip=request.headers.get('cf-connecting-ip');
+  const ip=process.env.VERCEL ? request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() : null;
   if(ip){const delay=await reserveAttempt('ip:'+await hashToken(ip),60,15*60000);if(delay)return reply({error:'요청이 많아요. 잠시 후 다시 시도해 주세요.'},429,{'Retry-After':String(delay)});}
   let id:string;
   if(data.action==='register'){
    if(data.pin!==data.confirmPin)return reply({error:'비밀번호 확인이 일치하지 않아요.'},400);
    const old=await legacyVisitorId(request);id=old??crypto.randomUUID();
    const salt=randomToken(),pinHash=await derivePin(data.pin,salt);
-   const result=await db.prepare('INSERT OR IGNORE INTO accounts(id,username,pin_hash,salt,created) VALUES(?,?,?,?,?)').bind(id,username,pinHash,salt,Date.now()).run();
+   const result=await db.prepare('INSERT INTO accounts(id,username,pin_hash,salt,created) VALUES(?,?,?,?,?) ON CONFLICT DO NOTHING').bind(id,username,pinHash,salt,Date.now()).run();
    if(!result.meta.changes)return reply({error:'이미 사용 중인 아이디이거나 이 브라우저의 기록에 계정이 연결되어 있어요. 다른 아이디 또는 로그인을 이용해 주세요.'},409);
   }else{
    const key='name:'+await hashToken(username),delay=await reserveAttempt(key,10,15*60000);

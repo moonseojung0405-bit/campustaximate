@@ -1,4 +1,5 @@
 import { visitorId } from '../../visitor';
+import { isSameOrigin } from '../../request-origin';
 import { getRawDb } from '../../../db';
 import { z } from 'zod';
 export const dynamic = 'force-dynamic';
@@ -22,14 +23,14 @@ export async function GET(request:Request) {
   if(!['어천역','초지역'].includes(station)) return reply({error:'출발역을 확인해 주세요.'},400);
   if(mine&&!user) return reply({error:'연결이 만료되었어요. 새로고침해 주세요.'},401);
   const now=Date.now();
-  const query=`SELECT r.id,r.station,r.departure,r.place,r.capacity,r.fare,r.note,r.status,r.host = ? AS owner,(SELECT nickname FROM members WHERE ride_id=r.id AND user_id=r.host) AS hostName,(SELECT COUNT(*) FROM members WHERE ride_id=r.id) AS count,EXISTS(SELECT 1 FROM members WHERE ride_id=r.id AND user_id=?) AS joined FROM rides r WHERE ${mine?'EXISTS(SELECT 1 FROM members WHERE ride_id=r.id AND user_id=?) AND r.departure > ?':"r.station=? AND r.departure > ? AND r.status='open'"} ORDER BY r.departure LIMIT 100`;
+  const query=`SELECT r.id,r.station,r.departure,r.place,r.capacity,r.fare,r.note,r.status,r.host = ? AS owner,(SELECT nickname FROM members WHERE ride_id=r.id AND user_id=r.host) AS "hostName",(SELECT COUNT(*) FROM members WHERE ride_id=r.id) AS count,EXISTS(SELECT 1 FROM members WHERE ride_id=r.id AND user_id=?) AS joined FROM rides r WHERE ${mine?'EXISTS(SELECT 1 FROM members WHERE ride_id=r.id AND user_id=?) AND r.departure > ?':"r.station=? AND r.departure > ? AND r.status='open'"} ORDER BY r.departure LIMIT 100`;
   const result=await db.prepare(query).bind(user??'',user??'',mine?user!:station,mine?now-7*86400000:now).all();
   return reply({rides:result.results});
  } catch(e){console.error('rides read failed',e);return reply({error:'모임을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'},503);}
 }
 export async function POST(request:Request){
  try{
-  if(request.headers.get('origin')!==new URL(request.url).origin) return reply({error:'요청 출처를 확인할 수 없어요.'},403);
+  if(!isSameOrigin(request)) return reply({error:'요청 출처를 확인할 수 없어요.'},403);
   const user=await visitorId(request);if(!user)return reply({error:'연결이 만료되었어요. 새로고침해 주세요.'},401);
   const raw=await request.text();if(raw.length>4096)return reply({error:'입력 내용이 너무 길어요.'},400);
   let json;try{json=JSON.parse(raw);}catch{return reply({error:'입력 내용을 확인해 주세요.'},400);}
@@ -47,17 +48,17 @@ export async function POST(request:Request){
   if(!ride)return reply({error:'모임을 찾을 수 없어요.'},404);
   if(data.action==='join'){
    if(!data.nickname)return reply({error:'모임에서 쓸 닉네임을 입력해 주세요.'},400);
-   const inserted=await db.prepare("INSERT OR IGNORE INTO members(ride_id,user_id,nickname,joined) SELECT id,?,?,? FROM rides WHERE id=? AND status='open' AND departure>? AND (SELECT COUNT(*) FROM members WHERE ride_id=rides.id)<capacity").bind(uid,data.nickname,now,data.id,now).run();
+   const inserted=await db.prepare("INSERT INTO members(ride_id,user_id,nickname,joined) SELECT id,?,?,? FROM rides WHERE id=? AND status='open' AND departure>? AND (SELECT COUNT(*) FROM members WHERE ride_id=rides.id)<capacity ON CONFLICT DO NOTHING").bind(uid,data.nickname,now,data.id,now).runLocked(data.id);
    if(!inserted.meta.changes){
     const member=await db.prepare('SELECT 1 FROM members WHERE ride_id=? AND user_id=?').bind(data.id,uid).first();
     if(!member)return reply({error:'정원이 찼거나 모집이 끝났어요. 다른 모임을 선택해 주세요.'},409);
    }
   }else if(data.action==='leave'){
    if(ride.host===uid)return reply({error:'모집자는 모임 취소를 이용해 주세요.'},400);
-   await db.prepare('DELETE FROM members WHERE ride_id=? AND user_id=?').bind(data.id,uid).run();
+   await db.prepare('DELETE FROM members WHERE ride_id=? AND user_id=?').bind(data.id,uid).runLocked(data.id);
   }else if(data.action==='cancel'){
    if(ride.host!==uid)return reply({error:'모집자만 취소할 수 있어요.'},403);
-   await db.prepare("UPDATE rides SET status='cancelled' WHERE id=? AND host=?").bind(data.id,uid).run();
+   await db.prepare("UPDATE rides SET status='cancelled' WHERE id=? AND host=?").bind(data.id,uid).runLocked(data.id);
   }else{
    if(!data.body)return reply({error:'메시지를 입력해 주세요.'},400);
    const member=await db.prepare('SELECT nickname FROM members WHERE ride_id=? AND user_id=?').bind(data.id,uid).first<{nickname:string}>();
