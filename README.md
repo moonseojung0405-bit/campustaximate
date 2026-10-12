@@ -2,7 +2,8 @@
 
 어천역·초지역에서 화성의과학대학교로 가는 택시 동승 웹앱입니다.
 
-- 직접 정하는 아이디(영문·숫자·밑줄 4~20자) + 숫자 4자리 비밀번호로 가입·로그인합니다. 채팅 닉네임은 로그인 아이디와 별도로 정합니다.
+- 가입은 선택입니다. **비회원으로 이용하기**로 모집·참여·채팅을 이용할 수 있습니다. 비회원 기록은 같은 브라우저의 쿠키로 연결되므로 쿠키 삭제 또는 브라우저 변경 시 다시 접근할 수 없습니다.
+- 직접 정하는 아이디(영문·숫자·밑줄 4~20자) + 숫자 4자리 비밀번호로 가입·로그인할 수도 있습니다. 같은 브라우저에서 처음 가입하면 비회원 모집과 채팅이 계정에 연결됩니다. 채팅 닉네임은 로그인 아이디와 별도로 정합니다.
 - 모집자 포함 정원 4명, 출발 예정 시각부터 최대 10분 대기.
 - 참여자 전용 채팅, 2분/5분 지각 및 도착 메시지, 참여 취소와 모집 취소.
 - 예상 총 요금은 작성자가 입력합니다. 실제 탑승 인원과 최종 요금으로 직접 정산합니다.
@@ -18,12 +19,14 @@ D1 DB 바인딩은 `.openai/hosting.json`에 선언되어 있습니다.
 ```
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_boring_freak.sql
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_known_the_twelve.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_loud_maestro.sql
 ```
 
 ## 검증
 
 - `node node_modules/typescript/bin/tsc --noEmit`
 - `npm run build`
+- 로컬 개발 서버 실행 후 `node scripts/verify-guests.mjs`: 비회원 모집·참여·채팅·취소, 브라우저 재접속, 가입 후 기록 연결, 다른 기기 로그인과 권한을 검증합니다.
 - 로컬 개발 서버 실행 후 `node scripts/verify-app.mjs`: 익명 세션, 출처 검사, 정원 4명, 동시 참여, 채팅 접근 권한, 저장, 참여 취소 및 재참여, 모집 취소를 검증합니다.
 - `scripts/verify-ui.mjs`: 작성 환경의 Playwright/Edge로 PC·모바일에서 등록/대화/저장/취소/화면 넘침을 확인합니다. 실행 환경이 바뀌면 스크립트 상단 경로를 수정합니다.
 - WebMCP 조회 도구는 지원 브라우저에서만 등록됩니다. 현재 검증 브라우저는 해당 API를 제공하지 않아 네이티브 WebMCP 동작은 미검증입니다.

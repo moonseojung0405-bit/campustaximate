@@ -1,4 +1,4 @@
-import { visitorId, accountSession } from '../../visitor';
+import { visitorId } from '../../visitor';
 import { getRawDb } from '../../../db';
 import { z } from 'zod';
 export const dynamic = 'force-dynamic';
@@ -30,7 +30,7 @@ export async function GET(request:Request) {
 export async function POST(request:Request){
  try{
   if(request.headers.get('origin')!==new URL(request.url).origin) return reply({error:'요청 출처를 확인할 수 없어요.'},403);
-  const user=(await accountSession(request))?.id;if(!user)return reply({error:'아이디와 4자리 비밀번호로 로그인해 주세요.'},401);
+  const user=await visitorId(request);if(!user)return reply({error:'연결이 만료되었어요. 새로고침해 주세요.'},401);
   const raw=await request.text();if(raw.length>4096)return reply({error:'입력 내용이 너무 길어요.'},400);
   let json;try{json=JSON.parse(raw);}catch{return reply({error:'입력 내용을 확인해 주세요.'},400);}
   const parsed=z.union([create,change]).safeParse(json);if(!parsed.success)return reply({error:'입력 내용을 확인해 주세요. 닉네임은 2~16자예요.'},400);

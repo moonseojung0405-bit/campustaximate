@@ -13,7 +13,7 @@ database.prepare('INSERT INTO rides(id,host,station,departure,place,capacity,not
 database.prepare('INSERT INTO members(ride_id,user_id,nickname,joined) VALUES(?,?,?,?)').run(oldRide,legacyId,'이전닉네임',now);
 database.prepare('INSERT INTO messages(id,ride_id,user_id,nickname,body,created) VALUES(?,?,?,?,?,?)').run(randomUUID(),oldRide,legacyId,'이전닉네임','가입 전 대화',now);
 assert.equal((await first.call('/api/session')).data.legacyRecords,true);
-assert.equal((await first.call('/api/rides',{action:'message',id:oldRide,body:'로그인 전'})).status,401);
+assert.equal((await first.call('/api/rides',{action:'message',id:oldRide,body:'로그인 전'})).status,200);
 assert.equal((await first.call('/api/session',{action:'register',username,pin:'12',confirmPin:'12'})).status,400);
 assert.equal((await first.call('/api/session',{action:'register',username,pin,confirmPin:'9999'})).status,400);
 assert.equal((await first.call('/api/session',{action:'register',username,pin,confirmPin:pin})).status,201);
@@ -28,7 +28,7 @@ assert.equal((await second.call('/api/rides',{action:'message',id:oldRide,body:'
 assert.equal((await first.call('/api/rides?id='+oldRide)).data.messages.at(-1).body,'다른 기기에서 이어 쓴 대화');
 const oldSession=first.jar.get('campus_taxi_account');assert.equal((await first.call('/api/session',{action:'logout'})).status,200);
 first.jar.set('campus_taxi_account',oldSession);assert.equal((await first.call('/api/session')).data.account,null);
-assert.equal((await first.call('/api/rides',{action:'message',id:oldRide,body:'로그아웃 후'})).status,401);
+assert.equal((await first.call('/api/rides',{action:'message',id:oldRide,body:'로그아웃 후'})).status,403);
 assert.equal((await second.call('/api/rides?id='+oldRide)).status,200,'Other device stays signed in');
 const stale=client();stale.jar.set('campus_taxi_visitor',legacyCookie);assert.equal((await stale.call('/api/rides?id='+oldRide)).status,401,'Old guest cookie cannot reclaim linked account');
 for(let i=0;i<10;i++)assert.equal((await outsider.call('/api/session',{action:'login',username,pin:'9999'})).status,401);
