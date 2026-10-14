@@ -17,7 +17,7 @@ function meta(name) {
   return content.replaceAll('&amp;', '&');
 }
 
-assert.match(meta('og:title'), /학교 같이타/);
+assert.match(meta('og:title'), /택시메이트/);
 assert.match(meta('og:description'), /어천역.*초지역/);
 assert.equal(meta('og:locale'), 'ko_KR');
 assert.equal(meta('og:type'), 'website');

@@ -3,7 +3,7 @@ import { ImageResponse } from 'next/og';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-export const alt = '학교 같이타 — 어천역·초지역에서 화성의과학대학교까지, 최대 4명 함께 타고 최대 10분 기다려요.';
+export const alt = '택시메이트 — 어천역·초지역에서 화성의과학대학교까지, 최대 4명 함께 타고 최대 10분 기다려요.';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -22,8 +22,8 @@ export default async function OpenGraphImage() {
       </div>
       <div style={{ position: 'absolute', left: 610, top: 0, width: 18, height: 630, background: '#164e3d', display: 'flex' }} />
       <div style={{ width: 620, padding: '53px 48px', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', fontSize: 22, letterSpacing: 3, color: '#50846b' }}>CAMPUS TAXI MATE</div>
-        <div style={{ display: 'flex', fontSize: 72, marginTop: 27, lineHeight: 1.3, letterSpacing: -3 }}>학교 같이타</div>
+        <div style={{ display: 'flex', fontSize: 22, letterSpacing: 3, color: '#50846b' }}>TAXI MATE</div>
+        <div style={{ display: 'flex', fontSize: 72, marginTop: 27, lineHeight: 1.3, letterSpacing: -3 }}>택시메이트</div>
         <div style={{ display: 'flex', fontSize: 29, marginTop: 22 }}>학교 가는 길, 함께 타요.</div>
         <div style={{ display: 'flex', flexDirection: 'column', marginTop: 33, fontSize: 25, lineHeight: 1.7 }}>
           <div style={{ display: 'flex', color: '#45705d' }}>어천역 · 초지역 출발</div>
